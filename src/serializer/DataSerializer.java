@@ -91,29 +91,22 @@ public class DataSerializer {
 			return;
 		}
 		
-		if (sInfo.hasSeenObjectBefore(obj)) {
-			out.writeBoolean(true);
-			out.writeShort(sInfo.getObjectIndex(obj));
+		if (writeHasSeenObjectBefore(obj, out, sInfo)) {
 			return;
 		}
-		out.writeBoolean(false);
-		sInfo.addObject(obj);
 		
 		final VariableType varType = VariableType.getType(obj.getClass().getComponentType());
-		if (varType == VariableType.PRIMITIVE) {
-			serializePrimitiveArray(obj, out, sInfo);
-		}
-		else if (varType == VariableType.ARRAY) {
-			serializeArrayArray(obj, out, sInfo);
-		}
-		else if (varType == VariableType.ENUM) {
-			serializeEnumArray(obj, out, sInfo);
-		}
-		else if (varType == VariableType.OBJECT) {
-			serializeObjectArray(obj, out, sInfo);
-		}
-		else {
-			throw new UnexpectedException("The VariableType did not match any of the possible types. Type: " + varType.name());
+		switch (varType) {
+			case PRIMITIVE:
+				serializePrimitiveArray(obj, out, sInfo);
+				break;
+			case ARRAY:
+			case ENUM:
+			case OBJECT:
+				serializeNullableArray(obj, out, sInfo, varType);
+				break;
+			default:
+				throw new UnexpectedException("The VariableType did not match any of the possible types. Type: " + varType.name());
 		}
 	}
 	
@@ -179,7 +172,7 @@ public class DataSerializer {
 		}
 	}
 	
-	private static void serializeArrayArray(Object obj, DataOutputStream out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
+	private static void serializeNullableArray(Object obj, DataOutputStream out, SerializationInfo sInfo, VariableType varType) throws IOException, IllegalArgumentException, IllegalAccessException {
 		final Object[] array = (Object[])obj;
 		out.writeInt(array.length);
 		for (int i = 0; i < array.length; i++) {
@@ -187,37 +180,20 @@ public class DataSerializer {
 			if (writeIsNull(arrayObj, out)) {
 				continue;
 			}
-			
 			out.writeShort(sInfo.getClassNameIndex(arrayObj.getClass()));
-			serializeArray(arrayObj, out, sInfo);
-		}
-	}
-	
-	private static void serializeEnumArray(Object obj, DataOutputStream out, SerializationInfo sInfo) throws IOException {
-		final Object[] array = (Object[])obj;
-		out.writeInt(array.length);
-		for (int i = 0; i < array.length; i++) {
-			final Object arrayObj = array[i];
-			if (writeIsNull(arrayObj, out)) {
-				continue;
+			
+			if (varType == VariableType.ARRAY) {
+				serializeArray(arrayObj, out, sInfo);
 			}
-			
-			out.writeShort(sInfo.getClassNameIndex(arrayObj.getClass()));
-			serializeEnum(arrayObj, out, sInfo);
-		}
-	}
-	
-	private static void serializeObjectArray(Object obj, DataOutputStream out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
-		final Object[] array = (Object[])obj;
-		out.writeInt(array.length);
-		for (int i = 0; i < array.length; i++) {
-			final Object arrayObj = array[i];
-			if (writeIsNull(arrayObj, out)) {
-				continue;
+			else if (varType == VariableType.ENUM) {
+				serializeEnum(obj, out, sInfo);
 			}
-			
-			out.writeShort(sInfo.getClassNameIndex(arrayObj.getClass()));
-			serializeObject(arrayObj, out, sInfo);
+			else if (varType == VariableType.OBJECT) {
+				serializeObject(obj, out, sInfo);
+			}
+			else {
+				throw new UnexpectedException("Type was not a nullable type. Type: " + varType.name());
+			}
 		}
 	}
 	
@@ -226,13 +202,9 @@ public class DataSerializer {
 			return;
 		}
 		
-		if (sInfo.hasSeenObjectBefore(obj)) {
-			out.writeBoolean(true);
-			out.writeShort(sInfo.getObjectIndex(obj));
+		if (writeHasSeenObjectBefore(obj, out, sInfo)) {
 			return;
 		}
-		out.writeBoolean(false);
-		sInfo.addObject(obj);
 		
 		//serialize all the fields in order
 		final ArrayList<Field> fields = SerializationCache.getClassFields(obj.getClass());
@@ -259,6 +231,17 @@ public class DataSerializer {
 			return true;
 		}
 		out.writeBoolean(false);
+		return false;
+	}
+	
+	private static boolean writeHasSeenObjectBefore(Object obj, DataOutputStream out, SerializationInfo sInfo) throws IOException {
+		if (sInfo.hasSeenObjectBefore(obj)) {
+			out.writeBoolean(true);
+			out.writeShort(sInfo.getObjectIndex(obj));
+			return true;
+		}
+		out.writeBoolean(false);
+		sInfo.addObject(obj);
 		return false;
 	}
 }
