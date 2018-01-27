@@ -1,5 +1,6 @@
 package serializer;
 
+import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -12,17 +13,16 @@ import serializer.exceptions.NoValidConstructorException;
 class DeserializationInfo {
 	private final HashMap<Class<?>, SimpleConstructor> classConstructors = new HashMap<>();
 	private final ArrayList<Object> deserializedObjects = new ArrayList<Object>();
+	private final String[] classnames;
 	private final Class<?>[] classes;
 	
-	public DeserializationInfo(DataInputStream in) throws IOException, ClassNotFoundException, NoValidConstructorException {
+	public DeserializationInfo(DataInput in) throws IOException {
 		final int length = in.readInt();
 		
+		this.classnames = new String[length];
 		this.classes = new Class<?>[length];
 		for (int i = 0; i < length; i++) {
-			final String classname = in.readUTF();
-			final Class<?> aliasClass = DeSerializerData.getDeserializerAlias(classname);
-			classes[i] = aliasClass;
-			classConstructors.put(aliasClass, DeSerializerData.getClassConstructor(aliasClass));
+			classnames[i] = in.readUTF();
 		}
 	}
 	
@@ -34,7 +34,10 @@ class DeserializationInfo {
 		return deserializedObjects.get(index);
 	}
 	
-	public Class<?> getClass(int index) {
+	public Class<?> getClass(int index) throws ClassNotFoundException {
+		if (classes[index] == null) {
+			classes[index] = Class.forName(classnames[index]);
+		}
 		return classes[index];
 	}
 	

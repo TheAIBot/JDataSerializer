@@ -7,6 +7,7 @@ import org.junit.Test;
 import serializer.exceptions.NoValidConstructorException;
 import testClasses.PrimitiveWrappers;
 import testClasses.Primitives;
+import tools.TestTools;
 
 public class TestPrimitives {
 	@Test

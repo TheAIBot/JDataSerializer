@@ -10,10 +10,11 @@ import org.junit.Test;
 
 import serializer.exceptions.NoValidConstructorException;
 import testClasses.*;
+import tools.TestTools;
 
 public class TestArrays {
 	@Test
-	public void serializePrimitiveArrays() throws ClassNotFoundException, IllegalArgumentException, IllegalAccessException, IOException, NoValidConstructorException {
+	public void serializePrimitiveArrays() throws Exception {
 		final byte[]    a1 = new byte[] {3, -7, 23, -56};
 		final short[]   a2 = new short[] {12342, 432, -3642, -223};
 		final int[]     a3 = new int[] {239842, 29837431, -2093428123,17128};
@@ -28,7 +29,7 @@ public class TestArrays {
 	}
 	
 	@Test
-	public void serializeArray2D() throws ClassNotFoundException, IllegalArgumentException, IllegalAccessException, IOException, NoValidConstructorException {
+	public void serializeArray2D() throws Exception {
 		Object[][] expected = new Object[3][];
 		expected[0] = new Object[1];
 		expected[0][0] = new Byte[] {3, -7, 23, -56};

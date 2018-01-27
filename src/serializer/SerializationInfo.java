@@ -1,5 +1,6 @@
 package serializer;
 
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -41,7 +42,7 @@ class SerializationInfo {
 		return seenObjects.get(obj);
 	}
 	
-	public void serialize(DataOutputStream out) throws IOException {
+	public void serialize(DataOutput out) throws IOException {
 		out.writeInt(classnamesList.size());
 		for (int i = 0; i < classnamesList.size(); i++) {
 			out.writeUTF(classnamesList.get(i));

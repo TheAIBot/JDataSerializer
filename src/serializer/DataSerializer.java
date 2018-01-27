@@ -1,6 +1,7 @@
 package serializer;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -9,7 +10,7 @@ import java.util.ArrayList;
 
 public class DataSerializer {	
 	
-	public static <T> void serialize(T obj, DataOutputStream out) throws IOException, IllegalArgumentException, IllegalAccessException {
+	public static <T> void serialize(T obj, DataOutput out) throws IOException, IllegalArgumentException, IllegalAccessException {
 		final VariableType varType = VariableType.getType(obj.getClass());
 		if (varType == VariableType.PRIMITIVE) {
 			out.writeBoolean(true);
@@ -30,7 +31,7 @@ public class DataSerializer {
 		}
 	}
 	
-	private static void serializePrimitive(Object obj, Class<?> clazz, DataOutputStream out) throws IOException {
+	private static void serializePrimitive(Object obj, Class<?> clazz, DataOutput out) throws IOException {
 		//if the object is a primitive type then it can
 		//be written directly to the stream
 		if (clazz == byte.class) {
@@ -62,7 +63,7 @@ public class DataSerializer {
 		}
 	}
 	
-	private static void  serializeNullable(Object obj, DataOutputStream out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
+	private static void  serializeNullable(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
 		final VariableType varType = VariableType.getType(obj.getClass());
 		if (varType == VariableType.ENUM) {
 			serializeEnum(obj, out, sInfo);
@@ -78,7 +79,7 @@ public class DataSerializer {
 		}
 	}
 	
-	private static void serializeEnum(Object obj, DataOutputStream out, SerializationInfo sInfo) throws IOException {
+	private static void serializeEnum(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException {
 		if (writeIsNull(obj, out)) {
 			return;
 		}
@@ -86,7 +87,7 @@ public class DataSerializer {
 		//out.writeShort(((Enum)obj).ordinal());
 	}
 	
-	private static void serializeArray(Object obj, DataOutputStream out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
+	private static void serializeArray(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
 		if (writeIsNull(obj, out)) {
 			return;
 		}
@@ -110,7 +111,7 @@ public class DataSerializer {
 		}
 	}
 	
-	private static void serializePrimitiveArray(Object obj, DataOutputStream out, SerializationInfo sInfo) throws IOException {
+	private static void serializePrimitiveArray(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException {
 		if (obj instanceof byte[]) {
 			final byte[] array = (byte[])obj;
 			out.writeInt(array.length);
@@ -172,7 +173,7 @@ public class DataSerializer {
 		}
 	}
 	
-	private static void serializeNullableArray(Object obj, DataOutputStream out, SerializationInfo sInfo, VariableType varType) throws IOException, IllegalArgumentException, IllegalAccessException {
+	private static void serializeNullableArray(Object obj, DataOutput out, SerializationInfo sInfo, VariableType varType) throws IOException, IllegalArgumentException, IllegalAccessException {
 		final Object[] array = (Object[])obj;
 		out.writeInt(array.length);
 		for (int i = 0; i < array.length; i++) {
@@ -197,7 +198,7 @@ public class DataSerializer {
 		}
 	}
 	
-	public static void serializeObject(Object obj, DataOutputStream out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
+	public static void serializeObject(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
 		if (writeIsNull(obj, out)) {
 			return;
 		}
@@ -225,7 +226,7 @@ public class DataSerializer {
 		}
 	}
 	
-	private static boolean writeIsNull(Object obj, DataOutputStream out) throws IOException {
+	private static boolean writeIsNull(Object obj, DataOutput out) throws IOException {
 		if (obj == null) {
 			out.writeBoolean(true);
 			return true;
@@ -234,7 +235,7 @@ public class DataSerializer {
 		return false;
 	}
 	
-	private static boolean writeHasSeenObjectBefore(Object obj, DataOutputStream out, SerializationInfo sInfo) throws IOException {
+	private static boolean writeHasSeenObjectBefore(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException {
 		if (sInfo.hasSeenObjectBefore(obj)) {
 			out.writeBoolean(true);
 			out.writeShort(sInfo.getObjectIndex(obj));
