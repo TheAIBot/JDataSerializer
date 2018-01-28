@@ -64,6 +64,13 @@ public class DataSerializer {
 	}
 	
 	private static void  serializeNullable(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
+		if (writeIsNull(obj, out)) {
+			return;
+		}
+		if (writeHasSeenObjectBefore(obj, out, sInfo)) {
+			return;
+		}
+		
 		final VariableType varType = VariableType.getType(obj.getClass());
 		if (varType == VariableType.ENUM) {
 			serializeEnum(obj, out, sInfo);
@@ -80,22 +87,11 @@ public class DataSerializer {
 	}
 	
 	private static void serializeEnum(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException {
-		if (writeIsNull(obj, out)) {
-			return;
-		}
 		out.writeUTF(((Enum)obj).name());
 		//out.writeShort(((Enum)obj).ordinal());
 	}
 	
-	private static void serializeArray(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
-		if (writeIsNull(obj, out)) {
-			return;
-		}
-		
-		if (writeHasSeenObjectBefore(obj, out, sInfo)) {
-			return;
-		}
-		
+	private static void serializeArray(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {		
 		final VariableType varType = VariableType.getType(obj.getClass().getComponentType());
 		switch (varType) {
 			case PRIMITIVE:
@@ -104,7 +100,7 @@ public class DataSerializer {
 			case ARRAY:
 			case ENUM:
 			case OBJECT:
-				serializeNullableArray(obj, out, sInfo, varType);
+				serializeNullableArray(obj, out, sInfo);
 				break;
 			default:
 				throw new UnexpectedException("The VariableType did not match any of the possible types. Type: " + varType.name());
@@ -173,40 +169,17 @@ public class DataSerializer {
 		}
 	}
 	
-	private static void serializeNullableArray(Object obj, DataOutput out, SerializationInfo sInfo, VariableType varType) throws IOException, IllegalArgumentException, IllegalAccessException {
+	private static void serializeNullableArray(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
 		final Object[] array = (Object[])obj;
 		out.writeInt(array.length);
 		for (int i = 0; i < array.length; i++) {
 			final Object arrayObj = array[i];
-			if (writeIsNull(arrayObj, out)) {
-				continue;
-			}
 			out.writeShort(sInfo.getClassNameIndex(arrayObj.getClass()));
-			
-			if (varType == VariableType.ARRAY) {
-				serializeArray(arrayObj, out, sInfo);
-			}
-			else if (varType == VariableType.ENUM) {
-				serializeEnum(obj, out, sInfo);
-			}
-			else if (varType == VariableType.OBJECT) {
-				serializeObject(obj, out, sInfo);
-			}
-			else {
-				throw new UnexpectedException("Type was not a nullable type. Type: " + varType.name());
-			}
+			serializeNullable(arrayObj, out, sInfo);
 		}
 	}
 	
-	public static void serializeObject(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
-		if (writeIsNull(obj, out)) {
-			return;
-		}
-		
-		if (writeHasSeenObjectBefore(obj, out, sInfo)) {
-			return;
-		}
-		
+	private static void serializeObject(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
 		//serialize all the fields in order
 		final ArrayList<Field> fields = SerializationCache.getClassFields(obj.getClass());
 		for (Field field : fields) {
