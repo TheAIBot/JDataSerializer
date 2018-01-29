@@ -1,4 +1,4 @@
-package tools;
+package serializer;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -10,6 +10,8 @@ import java.util.Random;
 import serializer.DataDeserializer;
 import serializer.DataSerializer;
 import serializer.exceptions.NoValidConstructorException;
+import tools.DebugDataInputStream;
+import tools.DebugDataOutputStream;
 
 public class TestTools {
 	private final static Random random = new Random();
@@ -20,14 +22,17 @@ public class TestTools {
 		try (ByteArrayOutputStream stream = new ByteArrayOutputStream()) {
 			try (DebugDataOutputStream out = new DebugDataOutputStream(stream)) {
 				
-				DataSerializer.serialize(toSerialize, out);
+				DataSerializer.serializeTest(toSerialize, out);
+				out.print();
 				data = stream.toByteArray();
 			}
 		}
 		
 		try (ByteArrayInputStream stream = new ByteArrayInputStream(data)) {
 			try (DebugDataInputStream in = new DebugDataInputStream(stream)) {				
-				return DataDeserializer.deserialize(type, in);
+				T result = DataDeserializer.deserialize(type, in);
+				in.print();
+				return result;
 			}
 		}
 	}

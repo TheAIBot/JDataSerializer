@@ -1,7 +1,6 @@
 package serializer;
 
 import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -54,32 +53,6 @@ public class DataDeserializer {
 	}
 	
 	private static Object deserializeNullable(Class<?> clazz, DataInput in, DeserializationInfo dInfo) throws IOException, IllegalArgumentException, IllegalAccessException, ClassNotFoundException, NoValidConstructorException {
-		final VariableType varType = VariableType.getType(clazz);
-		if (varType == VariableType.ENUM) {
-			return deserializeEnum(clazz, in);
-		}
-		else if (varType == VariableType.ARRAY) {
-			return deserializeArray(clazz, in, dInfo);
-		}
-		else if (varType == VariableType.OBJECT) {
-			return deserializeObject(clazz, in, dInfo);
-		}
-		else {
-			throw new UnexpectedException("Expected a nullable type but got instead: " + varType.toString());
-		}
-	}
-	
-	private static Object deserializeEnum(Class<?> clazz, DataInput in) throws IOException {
-		final boolean isNull = in.readBoolean();
-		if (isNull) {
-			return null;
-		}
-		
-		final String enumConstantName = in.readUTF();
-		return Enum.valueOf((Class<? extends Enum>) clazz, enumConstantName);
-	}
-	
-	private static Object deserializeArray(Class<?> clazz, DataInput in, DeserializationInfo dInfo) throws IOException, IllegalArgumentException, IllegalAccessException, ClassNotFoundException, NoValidConstructorException {
 		final boolean isNull = in.readBoolean();
 		if (isNull) {
 			return null;
@@ -91,6 +64,29 @@ public class DataDeserializer {
 			return dInfo.getObject(refIndex);
 		}
 		
+		final VariableType varType = VariableType.getType(clazz);
+		if (varType == VariableType.ENUM) {
+			return deserializeEnum(clazz, in, dInfo);
+		}
+		else if (varType == VariableType.ARRAY) {
+			return deserializeArray(clazz, in, dInfo);
+		}
+		else if (varType == VariableType.OBJECT) {
+			return deserializeObject(in, dInfo);
+		}
+		else {
+			throw new UnexpectedException("Expected a nullable type but got instead: " + varType.toString());
+		}
+	}
+	
+	private static Object deserializeEnum(Class<?> clazz, DataInput in, DeserializationInfo dInfo) throws IOException {		
+		final int index = in.readShort();
+		final Object res = clazz.getEnumConstants()[index];
+		dInfo.addObject(res);
+		return res;
+	}
+	
+	private static Object deserializeArray(Class<?> clazz, DataInput in, DeserializationInfo dInfo) throws IOException, IllegalArgumentException, IllegalAccessException, ClassNotFoundException, NoValidConstructorException {		
 		final VariableType varType = VariableType.getType(clazz.getComponentType());
 		switch (varType) {
 			case PRIMITIVE:
@@ -98,7 +94,7 @@ public class DataDeserializer {
 			case ARRAY:
 			case ENUM:
 			case OBJECT:
-				return deserializeNullableArray(clazz, in, dInfo, varType);
+				return deserializeNullableArray(in, dInfo, varType);
 			default:
 				throw new UnexpectedException("The VariableType did not match any of the possible types. Type: " + varType.name());
 		}
@@ -182,46 +178,19 @@ public class DataDeserializer {
 		}
 	}
 	
-	private static Object deserializeNullableArray(Class<?> clazz, DataInput in, DeserializationInfo dInfo, VariableType varType) throws IllegalArgumentException, IllegalAccessException, ClassNotFoundException, IOException, NoValidConstructorException {
+	private static Object deserializeNullableArray(DataInput in, DeserializationInfo dInfo, VariableType varType) throws IllegalArgumentException, IllegalAccessException, ClassNotFoundException, IOException, NoValidConstructorException {
+		final Class<?> clazz = dInfo.getClass(in.readShort());
 		final int length = in.readInt();
 		final Object[] data = (Object[]) Array.newInstance(clazz, length);
 		dInfo.addObject(data);
 		for (int i = 0; i < data.length; i++) {
-			final boolean isNull = in.readBoolean();
-			if (isNull) {
-				continue;
-			}
-			
-			final int classIndex = in.readShort();
-			final Class<?> type = dInfo.getClass(classIndex);
-			if (varType == VariableType.ARRAY) {
-				data[i] = deserializeArray(type, in, dInfo);
-			}
-			else if (varType == VariableType.ENUM) {
-				data[i] = deserializeEnum(type, in);
-			}
-			else if (varType == VariableType.OBJECT) {
-				data[i] = deserializeObject(type, in, dInfo);
-			}
-			else {
-				throw new UnexpectedException("Type was not a nullable type. Type: " + varType.name());
-			}
+			data[i] = deserializeNullable(clazz.getComponentType(), in, dInfo);
 		}
 		return data;
 	}
 	
-	private static Object deserializeObject(Class<?> clazz, DataInput in, DeserializationInfo dInfo) throws IOException, IllegalArgumentException, IllegalAccessException, ClassNotFoundException, NoValidConstructorException {
-		final boolean isNull = in.readBoolean();
-		if (isNull) {
-			return null;
-		}
-		
-		final boolean isReference = in.readBoolean();
-		if (isReference) {
-			final int refIndex = in.readShort();
-			return dInfo.getObject(refIndex);
-		}
-		
+	private static Object deserializeObject(DataInput in, DeserializationInfo dInfo) throws IOException, IllegalArgumentException, IllegalAccessException, ClassNotFoundException, NoValidConstructorException {
+		final Class<?> clazz = dInfo.getClass(in.readShort());
 		final Object obj = dInfo.newInstance(clazz);
 		dInfo.addObject(obj);
 		//deserialize all the fields in order

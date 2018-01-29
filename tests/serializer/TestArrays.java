@@ -10,7 +10,6 @@ import org.junit.Test;
 
 import serializer.exceptions.NoValidConstructorException;
 import testClasses.*;
-import tools.TestTools;
 
 public class TestArrays {
 	@Test
