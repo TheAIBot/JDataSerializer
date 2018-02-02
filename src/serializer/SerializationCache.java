@@ -48,12 +48,22 @@ public class SerializationCache {
 		for (Field field : newFields) {
 			//don't add transient fields as transient means the field
 			//shouldn't be serialized.
-			//The this field should also not be serialized
-			//as that's the pointer to the class itself
-			if (!Modifier.isTransient(field.getModifiers()) &&
-				!(Modifier.isFinal(field.getModifiers()) && Modifier.isStatic(field.getModifiers()))) {
-				fieldsList.add(field);	
+			if (Modifier.isTransient(field.getModifiers())) {
+				//continue; meh fuck that shit. lets add it anyway
 			}
+			
+			//constants should always be the same so no need to serialize then
+			if (Modifier.isFinal(field.getModifiers()) && Modifier.isStatic(field.getModifiers())) {
+				continue;
+			}
+			
+			//static fields are not directly part of the class so they should
+			//not be serialized
+			if (Modifier.isStatic(field.getModifiers())) {
+				continue;
+			}
+			
+			fieldsList.add(field);
 		}
 	}
 	
