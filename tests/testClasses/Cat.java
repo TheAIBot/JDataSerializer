@@ -1,5 +1,7 @@
 package testClasses;
 
+import serializer.TestTools;
+
 public class Cat extends Animal {
 	public int age;
 	
@@ -8,8 +10,12 @@ public class Cat extends Animal {
 		this.age = age;
 	}
 	
+	public static Cat createRandomCat() {
+		return new Cat(TestTools.randomString(10), TestTools.randomInt());
+	}
+	
 	@Override
-	public boolean equals(Animal b) {
+	public boolean equals(Object b) {
 		if (b instanceof Cat) {
 			final Cat cat = (Cat) b;
 			return this.name.equals(cat.name) && this.age == cat.age;

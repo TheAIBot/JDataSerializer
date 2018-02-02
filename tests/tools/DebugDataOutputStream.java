@@ -51,7 +51,7 @@ public class DebugDataOutputStream implements DataOutput, AutoCloseable {
 	@Override
 	public void writeChar(int v) throws IOException {
 		stream.writeChar(v);
-		sBuilder.append(" " + v);
+		sBuilder.append(" " + (char)v);
 	}
 
 	@Override

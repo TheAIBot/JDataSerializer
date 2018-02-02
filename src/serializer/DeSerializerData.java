@@ -32,7 +32,7 @@ public class DeSerializerData {
 		if (serializerAliases.containsKey(clazz)) {
 			return serializerAliases.get(clazz);
 		}
-		return clazz.getCanonicalName();
+		return clazz.getName();
 	}
 	
 	static Class<?> getDeserializerAlias(String classname) throws ClassNotFoundException {

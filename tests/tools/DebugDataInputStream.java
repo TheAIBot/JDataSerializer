@@ -17,6 +17,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 	public boolean readBoolean() throws IOException {
 		final boolean v = stream.readBoolean();
 		sBuilder.append(" " + v);
+		System.out.print(" " + v);
 		return v;
 	}
 
@@ -24,6 +25,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 	public byte readByte() throws IOException {
 		final byte v = stream.readByte();
 		sBuilder.append(" " + v);
+		System.out.print(" " + v);
 		return v;
 	}
 
@@ -31,6 +33,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 	public char readChar() throws IOException {
 		final char v = stream.readChar();
 		sBuilder.append(" " + v);
+		System.out.print(" " + v);
 		return v;
 	}
 
@@ -38,6 +41,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 	public double readDouble() throws IOException {
 		final double v = stream.readDouble();
 		sBuilder.append(" " + v);
+		System.out.print(" " + v);
 		return v;
 	}
 
@@ -45,6 +49,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 	public float readFloat() throws IOException {
 		final float v = stream.readFloat();
 		sBuilder.append(" " + v);
+		System.out.print(" " + v);
 		return v;
 	}
 
@@ -64,6 +69,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 	public int readInt() throws IOException {
 		final int v = stream.readInt();
 		sBuilder.append(" " + v);
+		System.out.print(" " + v);
 		return v;
 	}
 
@@ -71,6 +77,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 	public String readLine() throws IOException {
 		final String v = stream.readLine();
 		sBuilder.append(" " + v);
+		System.out.print(" " + v);
 		return v;
 	}
 
@@ -78,6 +85,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 	public long readLong() throws IOException {
 		final long v = stream.readLong();
 		sBuilder.append(" " + v);
+		System.out.print(" " + v);
 		return v;
 	}
 
@@ -85,6 +93,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 	public short readShort() throws IOException {
 		final short v = stream.readShort();
 		sBuilder.append(" " + v);
+		System.out.print(" " + v);
 		return v;
 	}
 
@@ -92,6 +101,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 	public String readUTF() throws IOException {
 		final String v = stream.readUTF();
 		sBuilder.append(" " + v);
+		System.out.print(" " + v);
 		return v;
 	}
 
@@ -99,6 +109,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 	public int readUnsignedByte() throws IOException {
 		final int v = stream.readUnsignedByte();
 		sBuilder.append(" " + v);
+		System.out.print(" " + v);
 		return v;
 	}
 
@@ -106,6 +117,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 	public int readUnsignedShort() throws IOException {
 		final int v = stream.readUnsignedShort();
 		sBuilder.append(" " + v);
+		System.out.print(" " + v);
 		return v;
 	}
 
@@ -113,6 +125,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 	public int skipBytes(int n) throws IOException {
 		final int v = stream.skipBytes(n);
 		sBuilder.append(" " + v);
+		System.out.print(" " + v);
 		return v;
 	}
 
@@ -121,15 +134,7 @@ public class DebugDataInputStream implements DataInput, AutoCloseable {
 		stream.close();
 	}
 	
-	public String dataAsString() {
-		return sBuilder.toString();
-	}
-	
-	public void addDataAsString(String data) {
-		sBuilder.append(data);
-	}
-	
 	public void print() {
-		System.out.println(sBuilder.toString());
+		System.out.println();//sBuilder.toString());
 	}
 }

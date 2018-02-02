@@ -19,7 +19,7 @@ public class DataDeserializer {
 		}
 		
 		final DeserializationInfo dInfo = new DeserializationInfo(in);
-		return (T)deserializeNullable(clazz, in, dInfo);
+		return (T)deserializeNullable(in, dInfo);
 	}
 	
 	private static Object deserializePrimitive(Class<?> clazz, DataInput in) throws IOException {
@@ -52,18 +52,17 @@ public class DataDeserializer {
 		}
 	}
 	
-	private static Object deserializeNullable(Class<?> clazz, DataInput in, DeserializationInfo dInfo) throws IOException, IllegalArgumentException, IllegalAccessException, ClassNotFoundException, NoValidConstructorException {
-		final boolean isNull = in.readBoolean();
-		if (isNull) {
+	private static Object deserializeNullable(DataInput in, DeserializationInfo dInfo) throws IOException, IllegalArgumentException, IllegalAccessException, ClassNotFoundException, NoValidConstructorException {
+		final DataType type = DataType.values()[in.readByte()];
+		if (type == DataType.Null) {
 			return null;
 		}
-		
-		final boolean isReference = in.readBoolean();
-		if (isReference) {
+		else if (type == DataType.Ref) {
 			final int refIndex = in.readShort();
 			return dInfo.getObject(refIndex);
 		}
 		
+		final Class<?> clazz = dInfo.getClass(in.readShort());
 		final VariableType varType = VariableType.getType(clazz);
 		if (varType == VariableType.ENUM) {
 			return deserializeEnum(clazz, in, dInfo);
@@ -72,7 +71,7 @@ public class DataDeserializer {
 			return deserializeArray(clazz, in, dInfo);
 		}
 		else if (varType == VariableType.OBJECT) {
-			return deserializeObject(in, dInfo);
+			return deserializeObject(clazz, in, dInfo);
 		}
 		else {
 			throw new UnexpectedException("Expected a nullable type but got instead: " + varType.toString());
@@ -94,7 +93,7 @@ public class DataDeserializer {
 			case ARRAY:
 			case ENUM:
 			case OBJECT:
-				return deserializeNullableArray(in, dInfo, varType);
+				return deserializeNullableArray(clazz, in, dInfo, varType);
 			default:
 				throw new UnexpectedException("The VariableType did not match any of the possible types. Type: " + varType.name());
 		}
@@ -178,19 +177,36 @@ public class DataDeserializer {
 		}
 	}
 	
-	private static Object deserializeNullableArray(DataInput in, DeserializationInfo dInfo, VariableType varType) throws IllegalArgumentException, IllegalAccessException, ClassNotFoundException, IOException, NoValidConstructorException {
-		final Class<?> clazz = dInfo.getClass(in.readShort());
-		final int length = in.readInt();
-		final Object[] data = (Object[]) Array.newInstance(clazz, length);
+	private static Object deserializeNullableArray(Class<?> clazz, DataInput in, DeserializationInfo dInfo, VariableType varType) throws IllegalArgumentException, IllegalAccessException, ClassNotFoundException, IOException, NoValidConstructorException {
+		final Class<?> arrayClazz = getArrayType(clazz);
+		final int firstLength = in.readInt();
+		final int dimensionCount = in.readByte();
+		final int[] dimensionlengths = getArrayDimensionArray(firstLength, dimensionCount);
+		final Object[] data = (Object[]) Array.newInstance(arrayClazz, dimensionlengths);
 		dInfo.addObject(data);
 		for (int i = 0; i < data.length; i++) {
-			data[i] = deserializeNullable(clazz.getComponentType(), in, dInfo);
+			data[i] = deserializeNullable(in, dInfo);
 		}
 		return data;
 	}
 	
-	private static Object deserializeObject(DataInput in, DeserializationInfo dInfo) throws IOException, IllegalArgumentException, IllegalAccessException, ClassNotFoundException, NoValidConstructorException {
-		final Class<?> clazz = dInfo.getClass(in.readShort());
+	private static Class<?> getArrayType(Class<?> clazz) {
+		while (clazz.isArray()) {
+			clazz = clazz.getComponentType();
+		}
+		return clazz;
+	}
+	
+	private static int[] getArrayDimensionArray(int firstLength, int dimensionCount) {
+		final int[] dimensionArray = new int[dimensionCount];
+		dimensionArray[0] = firstLength;
+		for (int i = 1; i < dimensionArray.length; i++) {
+			dimensionArray[i] = 0;
+		}
+		return dimensionArray;
+	}
+	
+	private static Object deserializeObject(Class<?> clazz, DataInput in, DeserializationInfo dInfo) throws IOException, IllegalArgumentException, IllegalAccessException, ClassNotFoundException, NoValidConstructorException {
 		final Object obj = dInfo.newInstance(clazz);
 		dInfo.addObject(obj);
 		//deserialize all the fields in order
@@ -204,7 +220,7 @@ public class DataDeserializer {
 				field.set(obj, deserializePrimitive(field.getType(), in));
 			}
 			else {
-				field.set(obj, deserializeNullable(field.getType(), in, dInfo));
+				field.set(obj, deserializeNullable(in, dInfo));
 			}
 			
 			field.setAccessible(isAccessible);

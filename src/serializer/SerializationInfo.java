@@ -10,7 +10,7 @@ class SerializationInfo {
 	private final HashMap<String, Integer> classnames  = new HashMap<String, Integer>();
 	private final ArrayList<String> classnamesList = new ArrayList<String>();
 	
-	private final HashMap<CompareRef, Integer> seenObjects = new HashMap<CompareRef, Integer>();
+	private final HashMap<Object, Integer> seenObjects = new HashMap<Object, Integer>();
 	private final ArrayList<Object> seenObjectsList = new ArrayList<Object>();
 	
 	public int getClassNameIndex(Class<?> clazz) {
@@ -35,7 +35,7 @@ class SerializationInfo {
 	
 	public void addObject(Object obj) {
 		seenObjectsList.add(obj);
-		seenObjects.put(new CompareRef(obj), seenObjectsList.size() - 1);
+		seenObjects.put(obj, seenObjectsList.size() - 1);
 	}
 	
 	public int getObjectIndex(Object obj) {

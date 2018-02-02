@@ -89,19 +89,19 @@ public class DataSerializer {
 	
 	private static void  serializeNullable(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
 		if (obj == null) {
-			out.writeBoolean(true);
+			out.writeByte(DataType.Null.ordinal());
 			return;
 		}
-		out.writeBoolean(false);
 		
 		if (sInfo.hasSeenObjectBefore(obj)) {
-			out.writeBoolean(true);
+			out.writeByte(DataType.Ref.ordinal());
 			out.writeShort(sInfo.getObjectIndex(obj));
 			return;
 		}
-		out.writeBoolean(false);
+		out.writeByte(DataType.Unique.ordinal());
 		sInfo.addObject(obj);
 		
+		out.writeShort(sInfo.getClassNameIndex(obj.getClass()));
 		final VariableType varType = VariableType.getType(obj.getClass());
 		if (varType == VariableType.ENUM) {
 			serializeEnum(obj, out, sInfo);
@@ -136,7 +136,7 @@ public class DataSerializer {
 				throw new UnexpectedException("The VariableType did not match any of the possible types. Type: " + varType.name());
 		}
 	}
-	
+		
 	private static void serializePrimitiveArray(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException {
 		if (obj instanceof byte[]) {
 			final byte[] array = (byte[])obj;
@@ -200,17 +200,26 @@ public class DataSerializer {
 	}
 	
 	private static void serializeNullableArray(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
-		out.writeShort(sInfo.getClassNameIndex(obj.getClass()));
 		final Object[] array = (Object[])obj;
 		out.writeInt(array.length);
+		out.writeByte(getArrayDimensions(obj));
 		for (int i = 0; i < array.length; i++) {
 			final Object arrayObj = array[i];
 			serializeNullable(arrayObj, out, sInfo);
 		}
 	}
 	
+	private static int getArrayDimensions(Object array) {
+		int dimensions = 0;
+		Class<?> arrayClass = array.getClass();
+		while (arrayClass.isArray()) {
+			dimensions++;
+			arrayClass = arrayClass.getComponentType();
+		}
+		return dimensions;
+	}
+	
 	private static void serializeObject(Object obj, DataOutput out, SerializationInfo sInfo) throws IOException, IllegalArgumentException, IllegalAccessException {
-		out.writeShort(sInfo.getClassNameIndex(obj.getClass()));
 		//serialize all the fields in order
 		final ArrayList<Field> fields = SerializationCache.getClassFields(obj.getClass());
 		for (Field field : fields) {
