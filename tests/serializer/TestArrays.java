@@ -124,7 +124,7 @@ public class TestArrays {
 	}
 	
 	@Test
-	public void serializeArrayWithRefs() throws ClassNotFoundException, IllegalArgumentException, IllegalAccessException, IOException, NoValidConstructorException {		
+	public void serializeArrayWithRefs1() throws ClassNotFoundException, IllegalArgumentException, IllegalAccessException, IOException, NoValidConstructorException {		
 		Object[] expected = new Object[9];
 		Cat cat1 = new Cat("assertion", -1);
 		Cat cat2 = new Cat("assertion", -1);
@@ -152,5 +152,17 @@ public class TestArrays {
 		assertNotSame(actual[0], actual[2]);
 		assertNotSame(actual[1], actual[6]);
 		assertNotSame(actual[0], actual[1]);
+	}
+	
+	@Test
+	public void serializeArrayWithRefs2() throws Exception {
+		Object[] expected = new Object[3];
+		expected[0] = expected;
+		expected[1] = Dog.createRandomDog();
+		expected[2] = Cat.createRandomCat();
+		
+		Object[] actual = TestTools.deSerialize(Object[].class, expected);
+		
+		Arrays.equals(expected, actual);
 	}
 }
