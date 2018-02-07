@@ -8,6 +8,7 @@ import java.rmi.UnexpectedException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import serializer.constructors.SimpleConstructor;
 import serializer.exceptions.NoValidConstructorException;
 
 class DeserializationInfo {

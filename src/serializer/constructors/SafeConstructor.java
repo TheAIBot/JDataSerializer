@@ -1,14 +1,12 @@
-package serializer;
+package serializer.constructors;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Parameter;
-import java.rmi.UnexpectedException;
 import java.util.Arrays;
 
 import serializer.exceptions.NoValidConstructorException;
 
-class SimpleConstructor {
+class SafeConstructor extends SimpleConstructor {
 	private final Object[] arguments;
 	private final Constructor<?> workingConstructor;
 	
@@ -21,23 +19,31 @@ class SimpleConstructor {
 	private static boolean BOOLEAN_DEFAULT_VALUE;
 	private static char    CHAR_DEFAULT_VALUE;
 	
-	public SimpleConstructor(Class<?> clazz) throws NoValidConstructorException {
+	SafeConstructor(Class<?> clazz) throws NoValidConstructorException {
+		super(clazz);
 		//maybe flawed logic but get all constructors and sort by arument count.
 		//I assume that class instantiation success increases with less constructor arguments.
-		Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+		final Constructor<?>[] constructors = clazz.getDeclaredConstructors();
 		Arrays.sort(constructors, (a, b) -> a.getGenericParameterTypes().length - b.getGenericParameterTypes().length);
 		
 		Constructor<?> canCreateInstance = null;
 		Object[] constructorArguments = null;
 		for (Constructor<?> constructor : constructors) {
+			final boolean isAccessible = constructor.isAccessible();
+			constructor.setAccessible(true);
 			try {
 				constructorArguments = getConstructorArguments(constructor);
 				constructor.newInstance(constructorArguments);
 				//if he code gets to this line, then it means that the constructor
 				//was successfully able to create an instance of the class
 				canCreateInstance = constructor;
+				constructor.setAccessible(isAccessible);
 				break;
-			} catch (Exception e) {	}
+			} catch (Exception e) { 
+				//System.out.println(e.getMessage());
+				//e.printStackTrace();
+			}
+			constructor.setAccessible(isAccessible);
 		}
 		
 		//if there is no way to create the class then the deserializer can't function
@@ -98,11 +104,15 @@ class SimpleConstructor {
 		}
 	}
 
-	public Object newInstance() throws UnexpectedException {
-		try {
-			return workingConstructor.newInstance(arguments);
-		} catch (Exception e) {
-			throw new UnexpectedException("Somehow failed to create instance even though it was already confirmed to work.");
-		}
+	@Override
+	protected Object newClassInstance() throws Exception {
+		final boolean isAccessible = workingConstructor.isAccessible();
+		workingConstructor.setAccessible(true);
+		
+		final Object instance = workingConstructor.newInstance(arguments);
+		workingConstructor.setAccessible(isAccessible);
+		
+		return instance;
 	}
+
 }

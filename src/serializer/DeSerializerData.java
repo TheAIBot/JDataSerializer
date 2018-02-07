@@ -2,6 +2,7 @@ package serializer;
 
 import java.util.HashMap;
 
+import serializer.constructors.SimpleConstructor;
 import serializer.exceptions.DuplicateAliasException;
 import serializer.exceptions.NoValidConstructorException;
 
@@ -49,7 +50,7 @@ public class DeSerializerData {
 			return classConstructors.get(clazz);
 		}
 		
-		final SimpleConstructor simpleConstructor = new SimpleConstructor(clazz);
+		final SimpleConstructor simpleConstructor = SimpleConstructor.getConstructor(clazz);
 		classConstructors.put(clazz, simpleConstructor);
 		return simpleConstructor;
 
